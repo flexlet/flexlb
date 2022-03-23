@@ -1,4 +1,4 @@
-module flexlb
+module gitee.com/flexlb/flexlb-api
 
 go 1.17
 
