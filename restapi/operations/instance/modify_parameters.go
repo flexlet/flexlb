@@ -16,7 +16,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/validate"
 
-	"flexlb/models"
+	"gitee.com/flexlb/flexlb-api/models"
 )
 
 // NewModifyParams creates a new ModifyParams object

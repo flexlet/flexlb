@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"flexlb/config"
-	"flexlb/models"
-	"flexlb/restapi/operations/service"
+	"gitee.com/flexlb/flexlb-api/config"
+	"gitee.com/flexlb/flexlb-api/models"
+	"gitee.com/flexlb/flexlb-api/restapi/operations/service"
 
 	"github.com/go-openapi/runtime/middleware"
 )

@@ -1,8 +1,8 @@
 package config
 
 import (
-	"flexlb/common"
-	"flexlb/models"
+	"gitee.com/flexlb/flexlb-api/common"
+	"gitee.com/flexlb/flexlb-api/models"
 	"fmt"
 	"io/ioutil"
 	"log"

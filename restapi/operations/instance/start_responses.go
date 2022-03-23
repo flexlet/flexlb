@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-openapi/runtime"
 
-	"flexlb/models"
+	"gitee.com/flexlb/flexlb-api/models"
 )
 
 // StartOKCode is the HTTP code returned for type StartOK

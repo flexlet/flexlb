@@ -19,8 +19,8 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	"flexlb/restapi/operations/instance"
-	"flexlb/restapi/operations/service"
+	"gitee.com/flexlb/flexlb-api/restapi/operations/instance"
+	"gitee.com/flexlb/flexlb-api/restapi/operations/service"
 )
 
 // NewFlexlbAPI creates a new Flexlb instance

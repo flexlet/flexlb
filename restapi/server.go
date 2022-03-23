@@ -25,7 +25,7 @@ import (
 	flags "github.com/jessevdk/go-flags"
 	"golang.org/x/net/netutil"
 
-	"flexlb/restapi/operations"
+	"gitee.com/flexlb/flexlb-api/restapi/operations"
 )
 
 const (

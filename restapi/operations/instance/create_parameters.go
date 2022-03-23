@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/validate"
 
-	"flexlb/models"
+	"gitee.com/flexlb/flexlb-api/models"
 )
 
 // NewCreateParams creates a new CreateParams object

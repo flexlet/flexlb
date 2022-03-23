@@ -12,11 +12,11 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/swag"
 
-	"flexlb/common"
-	"flexlb/config"
-	"flexlb/handlers"
-	"flexlb/restapi/operations"
-	"flexlb/wacher"
+	"gitee.com/flexlb/flexlb-api/common"
+	"gitee.com/flexlb/flexlb-api/config"
+	"gitee.com/flexlb/flexlb-api/handlers"
+	"gitee.com/flexlb/flexlb-api/restapi/operations"
+	"gitee.com/flexlb/flexlb-api/wacher"
 )
 
 // flexlb command line options

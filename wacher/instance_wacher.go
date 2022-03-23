@@ -1,9 +1,9 @@
 package wacher
 
 import (
-	"flexlb/common"
-	"flexlb/config"
-	"flexlb/models"
+	"gitee.com/flexlb/flexlb-api/common"
+	"gitee.com/flexlb/flexlb-api/config"
+	"gitee.com/flexlb/flexlb-api/models"
 	"fmt"
 	"log"
 	"sync"
