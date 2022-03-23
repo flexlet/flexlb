@@ -1,0 +1,41 @@
+config_dir: "/etc/flexlb/instance"
+watch_interval: 10
+haproxy:
+  config_dir: "/etc/flexlb/haproxy"
+  pid_dir: "/run/flexlb/haproxy"
+  start_timeout: 1
+  global:
+    daemon: false
+    maxconn: 4000
+    uid: 1001
+    gid: 1001
+    log: "/dev/log local5 info"
+  defaults:
+    mode: "http"
+    log: "global"
+    options: 
+      - tcplog
+      - dontlognull
+      - abortonclose
+    retries: 2
+    maxconn: 20000
+    timeout:
+      http-request: "8s"
+      http-keep-alive: "15s"
+      check: "6s"
+      queue: "25s"
+      connect: "10s"
+keepalived:
+  config_file: "/etc/keepalived/keepalived.conf"
+  config_dir: "/etc/flexlb/keepalived"
+  pid_file: "/run/keepalived.pid"
+  min_virtual_router_id: 1
+  max_virtual_router_id: 255
+  advert_int: 1
+  auth_type: "AH"
+  auth_pass: "PaaSw0Rd"
+  global_defs:
+    router_id: "FLEXLB"
+    vrrp_skip_check_adv_addr: true
+    vrrp_garp_interval: 0
+    vrrp_gna_interval: 0

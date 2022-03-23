@@ -1,37 +1,124 @@
-# flexlb-api
+# FlexLB API Server
 
-#### 介绍
 Flexible load balancer API server to control keepalived and haproxy
 
-#### 软件架构
-软件架构说明
+## Build
 
+### Generate code
 
-#### 安装教程
+```sh
+swagger generate server -f swagger/flexlb-api-spec.yaml
+```
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+### Build binary
 
-#### 使用说明
+#### For Linux
+```sh
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /tmp/flexlb-api cmd/flexlb-server/main.go
+```
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## Run
 
-#### 参与贡献
+### Install and start Keepalived
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+#### For EulerOS 2.9
+```sh
+rpm -ivh net-snmp-5.8-8.h6.eulerosv2r9.x86_64.rpm  net-snmp-libs-5.8-8.h6.eulerosv2r9.x86_64.rpm
+rpm -ivh keepalived-2.0.20-16.h5.eulerosv2r9.x86_64.rpm
+systemctl enable keepalived
+systemctl start keepalived
+```
 
+### Install HAProxy
 
-#### 特技
+#### For EulerOS 2.9
+```sh
+rpm -ivh haproxy-2.0.14-1.eulerosv2r9.x86_64.rpm
+```
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+### Generage self-signed certificate
+
+#### Generate CA key and CA certs
+
+```sh
+mkdir -p  /etc/flexlb/certs/
+cd /etc/flexlb/certs/
+
+DNS_NAME="example.com"
+
+openssl genrsa -out ca.key 2048
+openssl req -new -out ca.csr -key ca.key -subj "/CN=${DNS_NAME}"
+openssl x509 -req -in ca.csr -out ca.crt -signkey ca.key -CAcreateserial -days 3650
+```
+#### Generate server key and certs
+
+```sh
+openssl genrsa -out server.key 2048
+openssl req -new -out server.csr -key server.key -subj "/CN=${DNS_NAME}"
+openssl x509 -req -in server.csr -out server.crt -signkey server.key -CA ca.crt -CAkey ca.key -CAcreateserial -days 3650
+```
+
+### Run FlexLB API server
+```sh
+CONF=/etc/flexlb
+export HOST=localhost
+export PORT=8080
+export TLS_HOST=localhost
+export TLS_PORT=8443
+export TLS_CERTIFICATE=${CONF}/certs/server.crt
+export TLS_PRIVATE_KEY=${CONF}/certs/server.key
+export TLS_CA_CERTIFICATE=${CONF}/certs/ca.crt
+
+# copy flexlb-api and conf/flexlb-api-config.yaml here
+# run flexlb-api server in debug mode
+chmod +x flexlb-api
+./flexlb-api --config-file=conf/flexlb-api-config.yaml --debug
+```
+
+## Test
+
+### Prepare backend servers
+
+For example, create 3 nginx server:
+```
+192.168.1.141:30080
+192.168.1.142:30080
+192.168.1.143:30080
+```
+
+### Prepare instance config template
+
+Prepare instance config for API post, for example: 
+```
+test/instance_template.json
+```
+
+### Test instance create, list, modify, get, start, stop, delete
+
+```sh
+# get ready status
+sh get_status.sh
+
+# create instances
+sh create_instance.sh inst1 192.168.2.1
+sh create_instance.sh inst2 192.168.2.2
+
+# list instances
+sh list_instances.sh
+sh list_instances.sh inst1
+
+# modify instance
+# edit instance_template.json to add or remove backend servers
+sh modify_instance.sh inst1 192.168.2.3
+
+# show instance changes
+sh get_instance.sh inst1
+
+# stop & start instance
+sh stop_instance.sh inst1
+sh start_instance.sh inst1
+
+# delete instances
+sh delete_instance.sh inst1
+sh delete_instance.sh inst2
+```
