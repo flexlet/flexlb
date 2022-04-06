@@ -4,16 +4,17 @@ Flexible load balancer API server to control keepalived and haproxy
 
 ## Build
 
-### Generate code
+### Clone code
 
 ```sh
-swagger generate server -f swagger/flexlb-api-spec.yaml
+git clone https://gitee.com/flexlb/flexlb-api.git
 ```
 
 ### Build binary
 
 #### For Linux
 ```sh
+cd flexlb-api
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /tmp/flexlb-api cmd/flexlb-server/main.go
 ```
 
@@ -58,21 +59,23 @@ openssl req -new -out server.csr -key server.key -subj "/CN=${DNS_NAME}"
 openssl x509 -req -in server.csr -out server.crt -signkey server.key -CA ca.crt -CAkey ca.key -CAcreateserial -days 3650
 ```
 
+#### Generate client key and certs
+
+```sh
+openssl genrsa -out client.key 2048
+openssl req -new -out client.csr -key client.key -subj "/CN=${DNS_NAME}"
+openssl x509 -req -in client.csr -out client.crt -signkey client.key -CA ca.crt -CAkey ca.key -CAcreateserial -days 3650
+```
+
 ### Run FlexLB API server
 ```sh
-CONF=/etc/flexlb
-export HOST=localhost
-export PORT=8080
-export TLS_HOST=localhost
-export TLS_PORT=8443
-export TLS_CERTIFICATE=${CONF}/certs/server.crt
-export TLS_PRIVATE_KEY=${CONF}/certs/server.key
-export TLS_CA_CERTIFICATE=${CONF}/certs/ca.crt
+# copy conf/flexlb-api-config.yaml to nodes /etc/flexlb/
+# edit /etc/flexlb/flexlb-api-config.yaml, change <NODE_NAME> <NODE_PUB_IP> <CLUSTER_PUB_IP> <NODE_ADVERTISE_IP> and other member's <NODE_ADVERTISE_IP>
 
-# copy flexlb-api and conf/flexlb-api-config.yaml here
-# run flexlb-api server in debug mode
+# copy /tmp/flexlb-api to nodes, and run on each nodes
 chmod +x flexlb-api
-./flexlb-api --config-file=conf/flexlb-api-config.yaml --debug
+./flexlb-api
+
 ```
 
 ## Test

@@ -34,7 +34,7 @@ func NewModify(ctx *middleware.Context, handler ModifyHandler) *Modify {
 	return &Modify{Context: ctx, Handler: handler}
 }
 
-/* Modify swagger:route PUT /instances/{name} Instance modify
+/* Modify swagger:route PUT /instances Instance modify
 
 Modify Instance
 

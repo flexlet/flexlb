@@ -2,41 +2,43 @@
     "name": "<NAME>",
     "frontend_interface": "enp4s3",
     "frontend_ipaddress": "<VIP>",
-    "frontend_port": 8080,
     "frontend_net_prefix": 24,
-    "frontend_options": "",
-    "mode": "tcp",
-    "state": "MASTER",
-    "priority": 100,
-    "balance": "roundrobin",
-    "backend_options": [
-    	"httpchk GET /"
-    ],
-    "backend_check_commands": {
-    	"check_type": "http-check",
-    	"commands":	[
-	        "expect status 200"
-        ]
-    },
-    "backend_default_server": "inter 2s downinter 5s rise 2 fall 2 slowstart 60s maxconn 2000 maxqueue 2000 weight 100",
-    "backend_servers": [
+    "endpoints": [
         {
-            "name": "app1",
-            "ipaddress": "192.168.1.141",
-            "port": 30080,
-            "options": "check"
-        },
-        {
-            "name": "app2",
-            "ipaddress": "192.168.1.142",
-            "port": 30080,
-            "options": "check"
-        },
-        {
-            "name": "app3",
-            "ipaddress": "192.168.1.143",
-            "port": 30080,
-            "options": "check"
+            "frontend_port": 8080,
+            "frontend_options": "",
+            "mode": "tcp",
+            "balance": "roundrobin",
+            "backend_options": [
+                "httpchk GET /"
+            ],
+            "backend_check_commands": {
+                "check_type": "http-check",
+                "commands": [
+                    "expect status 200"
+                ]
+            },
+            "backend_default_server": "inter 2s downinter 5s rise 2 fall 2 slowstart 60s maxconn 2000 maxqueue 2000 weight 100",
+            "backend_servers": [
+                {
+                    "name": "app1",
+                    "ipaddress": "192.168.1.141",
+                    "port": 30080,
+                    "options": "check"
+                },
+                {
+                    "name": "app2",
+                    "ipaddress": "192.168.1.142",
+                    "port": 30080,
+                    "options": "check"
+                },
+                {
+                    "name": "app3",
+                    "ipaddress": "192.168.1.143",
+                    "port": 30080,
+                    "options": "check"
+                }
+            ]
         }
     ]
 }

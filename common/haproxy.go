@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"log"
 	"time"
 )
 
@@ -13,11 +12,10 @@ const (
 
 func StopHAProxy(pidFile string) error {
 	if status := GetProcStatus(pidFile); status == STATUS_UP {
-		log.Printf("stoping haproxy: %s\n", pidFile)
+		LogPrintf(LOG_INFO, "haproxy", "stoping haproxy '%s'", pidFile)
 		cmd := fmt.Sprintf("PIDFILE=%s; %s", pidFile, haproxyStopCmd)
 		if _, err := ExecCommand(cmd); err != nil {
-			log.Printf("stop haproxy '%s' failed: %s\n", pidFile, err.Error())
-			return err
+			return fmt.Errorf("stop haproxy '%s' failed: %s", pidFile, err.Error())
 		}
 	}
 	return nil
@@ -25,11 +23,10 @@ func StopHAProxy(pidFile string) error {
 
 func StartHAProxy(cfgFile string, pidFile string, tmout int) (string, error) {
 	status := STATUS_PENDING
-	log.Printf("starting haproxy: %s\n", cfgFile)
+	LogPrintf(LOG_INFO, "haproxy", "starting haproxy '%s'", cfgFile)
 	cmd := fmt.Sprintf("HAPROXY_CONF=%s;PIDFILE=%s; %s", cfgFile, pidFile, haproxyStartCmd)
 	if _, err := ExecCommand(cmd); err != nil {
-		log.Printf("starting haproxy failed: %s\n", err.Error())
-		return status, err
+		return status, fmt.Errorf("starting haproxy '%s' failed: %s", cfgFile, err.Error())
 	}
 	for i := 0; i < tmout*100; i++ {
 		if FileExist(pidFile) {

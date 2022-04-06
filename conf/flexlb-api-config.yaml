@@ -1,5 +1,25 @@
-config_dir: "/etc/flexlb/instance"
-watch_interval: 10
+name: <NODE_NAME>
+host: localhost
+port: 8080
+tls_host: <NODE_PUB_IP>
+tls_port: 8443
+tls_cert: "/etc/flexlb/certs/server.crt"
+tls_key: "/etc/flexlb/certs/server.key"
+tls_ca_cert: "/etc/flexlb/certs/ca.crt"
+tls_client_cert: "/etc/flexlb/certs/client.crt"
+tls_client_key: "/etc/flexlb/certs/client.key"
+instance_dir: "/etc/flexlb/instance"
+watch_interval: 30
+log_level: 0
+cluster:
+  name: "FLEXLB"
+  endpoint: "<CLUSTER_PUB_IP>:8443"
+  advertize: "<NODE_ADVERTISE_IP>:8001"
+  member: "<NODE1_ADVERTISE_IP>:8001,<NODE2_ADVERTISE_IP>:8001,<NODE3_ADVERTISE_IP>:8001"
+  secret_key: "1111111111111111"
+  probe_interval: 10
+  sync_interval: 60
+  retransmit_mult: 2
 haproxy:
   config_dir: "/etc/flexlb/haproxy"
   pid_dir: "/run/flexlb/haproxy"
@@ -37,5 +57,5 @@ keepalived:
   global_defs:
     router_id: "FLEXLB"
     vrrp_skip_check_adv_addr: true
-    vrrp_garp_interval: 0
-    vrrp_gna_interval: 0
+    vrrp_garp_interval: 0.1
+    vrrp_gna_interval: 0.01

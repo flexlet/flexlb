@@ -7,6 +7,7 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -15,10 +16,12 @@ import (
 )
 
 // BackendServer Backend server
-// Example: {"ipaddress":"192.168.1.2","name":"node1","options":"check check-ssl verify none","port":443}
 //
 // swagger:model BackendServer
 type BackendServer struct {
+
+	// check ssl options
+	CheckSslOptions *BackendServerCheckSslOptions `json:"check_ssl_options,omitempty"`
 
 	// Backend server IP address
 	// Required: true
@@ -42,6 +45,10 @@ type BackendServer struct {
 func (m *BackendServer) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCheckSslOptions(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateIpaddress(formats); err != nil {
 		res = append(res, err)
 	}
@@ -57,6 +64,25 @@ func (m *BackendServer) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *BackendServer) validateCheckSslOptions(formats strfmt.Registry) error {
+	if swag.IsZero(m.CheckSslOptions) { // not required
+		return nil
+	}
+
+	if m.CheckSslOptions != nil {
+		if err := m.CheckSslOptions.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("check_ssl_options")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("check_ssl_options")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -95,8 +121,33 @@ func (m *BackendServer) validatePort(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this backend server based on context it is used
+// ContextValidate validate this backend server based on the context it is used
 func (m *BackendServer) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateCheckSslOptions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *BackendServer) contextValidateCheckSslOptions(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.CheckSslOptions != nil {
+		if err := m.CheckSslOptions.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("check_ssl_options")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("check_ssl_options")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -111,6 +162,101 @@ func (m *BackendServer) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary interface implementation
 func (m *BackendServer) UnmarshalBinary(b []byte) error {
 	var res BackendServer
+	if err := swag.ReadJSON(b, &res); err != nil {
+		return err
+	}
+	*m = res
+	return nil
+}
+
+// BackendServerCheckSslOptions Backend check commands
+//
+// swagger:model BackendServerCheckSslOptions
+type BackendServerCheckSslOptions struct {
+
+	// ca cert
+	CaCert *string `json:"ca_cert,omitempty"`
+
+	// client cert
+	ClientCert string `json:"client_cert,omitempty"`
+
+	// client key
+	ClientKey string `json:"client_key,omitempty"`
+
+	// verify
+	// Enum: [none]
+	Verify *string `json:"verify,omitempty"`
+}
+
+// Validate validates this backend server check ssl options
+func (m *BackendServerCheckSslOptions) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateVerify(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+var backendServerCheckSslOptionsTypeVerifyPropEnum []interface{}
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["none"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		backendServerCheckSslOptionsTypeVerifyPropEnum = append(backendServerCheckSslOptionsTypeVerifyPropEnum, v)
+	}
+}
+
+const (
+
+	// BackendServerCheckSslOptionsVerifyNone captures enum value "none"
+	BackendServerCheckSslOptionsVerifyNone string = "none"
+)
+
+// prop value enum
+func (m *BackendServerCheckSslOptions) validateVerifyEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, backendServerCheckSslOptionsTypeVerifyPropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *BackendServerCheckSslOptions) validateVerify(formats strfmt.Registry) error {
+	if swag.IsZero(m.Verify) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateVerifyEnum("check_ssl_options"+"."+"verify", "body", *m.Verify); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validates this backend server check ssl options based on context it is used
+func (m *BackendServerCheckSslOptions) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	return nil
+}
+
+// MarshalBinary interface implementation
+func (m *BackendServerCheckSslOptions) MarshalBinary() ([]byte, error) {
+	if m == nil {
+		return nil, nil
+	}
+	return swag.WriteJSON(m)
+}
+
+// UnmarshalBinary interface implementation
+func (m *BackendServerCheckSslOptions) UnmarshalBinary(b []byte) error {
+	var res BackendServerCheckSslOptions
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

@@ -7,7 +7,6 @@ package models
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -21,23 +20,9 @@ import (
 // swagger:model InstanceConfig
 type InstanceConfig struct {
 
-	// backend check commands
-	BackendCheckCommands *InstanceConfigBackendCheckCommands `json:"backend_check_commands,omitempty"`
-
-	// Backend default server options
-	BackendDefaultServer *string `json:"backend_default_server,omitempty"`
-
-	// Backend options
-	// Example: ["httpchk GET /"]
-	BackendOptions []string `json:"backend_options"`
-
-	// Backend servers
+	// Endpoints
 	// Required: true
-	BackendServers []*BackendServer `json:"backend_servers"`
-
-	// Balance algorithm
-	// Required: true
-	Balance string `json:"balance"`
+	Endpoints []*Endpoint `json:"endpoints"`
 
 	// Frontend network interface
 	// Example: eth0
@@ -58,50 +43,17 @@ type InstanceConfig struct {
 	// Minimum: 8
 	FrontendNetPrefix uint8 `json:"frontend_net_prefix"`
 
-	// Frontend options
-	// Example: ssl
-	FrontendOptions *string `json:"frontend_options,omitempty"`
-
-	// Frontend port
-	// Example: 443
-	// Required: true
-	FrontendPort uint16 `json:"frontend_port"`
-
-	// Protocol mode
-	// Required: true
-	// Enum: [tcp udp http]
-	Mode string `json:"mode"`
-
 	// Instance name
 	// Required: true
 	// Pattern: ^[A-Za-z0-9\-_.]{1,32}$
 	Name string `json:"name"`
-
-	// Instance priority
-	// Required: true
-	// Maximum: 100
-	// Minimum: 1
-	Priority uint8 `json:"priority"`
-
-	// Instance state
-	// Required: true
-	// Enum: [MASTER BACKUP]
-	State string `json:"state"`
 }
 
 // Validate validates this instance config
 func (m *InstanceConfig) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateBackendCheckCommands(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateBackendServers(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateBalance(formats); err != nil {
+	if err := m.validateEndpoints(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -117,23 +69,7 @@ func (m *InstanceConfig) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateFrontendPort(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateMode(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateName(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validatePriority(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateState(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -143,56 +79,28 @@ func (m *InstanceConfig) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *InstanceConfig) validateBackendCheckCommands(formats strfmt.Registry) error {
-	if swag.IsZero(m.BackendCheckCommands) { // not required
-		return nil
-	}
+func (m *InstanceConfig) validateEndpoints(formats strfmt.Registry) error {
 
-	if m.BackendCheckCommands != nil {
-		if err := m.BackendCheckCommands.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("backend_check_commands")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("backend_check_commands")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *InstanceConfig) validateBackendServers(formats strfmt.Registry) error {
-
-	if err := validate.Required("backend_servers", "body", m.BackendServers); err != nil {
+	if err := validate.Required("endpoints", "body", m.Endpoints); err != nil {
 		return err
 	}
 
-	for i := 0; i < len(m.BackendServers); i++ {
-		if swag.IsZero(m.BackendServers[i]) { // not required
+	for i := 0; i < len(m.Endpoints); i++ {
+		if swag.IsZero(m.Endpoints[i]) { // not required
 			continue
 		}
 
-		if m.BackendServers[i] != nil {
-			if err := m.BackendServers[i].Validate(formats); err != nil {
+		if m.Endpoints[i] != nil {
+			if err := m.Endpoints[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("backend_servers" + "." + strconv.Itoa(i))
+					return ve.ValidateName("endpoints" + "." + strconv.Itoa(i))
 				} else if ce, ok := err.(*errors.CompositeError); ok {
-					return ce.ValidateName("backend_servers" + "." + strconv.Itoa(i))
+					return ce.ValidateName("endpoints" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
 		}
 
-	}
-
-	return nil
-}
-
-func (m *InstanceConfig) validateBalance(formats strfmt.Registry) error {
-
-	if err := validate.RequiredString("balance", "body", m.Balance); err != nil {
-		return err
 	}
 
 	return nil
@@ -241,61 +149,6 @@ func (m *InstanceConfig) validateFrontendNetPrefix(formats strfmt.Registry) erro
 	return nil
 }
 
-func (m *InstanceConfig) validateFrontendPort(formats strfmt.Registry) error {
-
-	if err := validate.Required("frontend_port", "body", uint16(m.FrontendPort)); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-var instanceConfigTypeModePropEnum []interface{}
-
-func init() {
-	var res []string
-	if err := json.Unmarshal([]byte(`["tcp","udp","http"]`), &res); err != nil {
-		panic(err)
-	}
-	for _, v := range res {
-		instanceConfigTypeModePropEnum = append(instanceConfigTypeModePropEnum, v)
-	}
-}
-
-const (
-
-	// InstanceConfigModeTCP captures enum value "tcp"
-	InstanceConfigModeTCP string = "tcp"
-
-	// InstanceConfigModeUDP captures enum value "udp"
-	InstanceConfigModeUDP string = "udp"
-
-	// InstanceConfigModeHTTP captures enum value "http"
-	InstanceConfigModeHTTP string = "http"
-)
-
-// prop value enum
-func (m *InstanceConfig) validateModeEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, instanceConfigTypeModePropEnum, true); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *InstanceConfig) validateMode(formats strfmt.Registry) error {
-
-	if err := validate.RequiredString("mode", "body", m.Mode); err != nil {
-		return err
-	}
-
-	// value enum
-	if err := m.validateModeEnum("mode", "body", m.Mode); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (m *InstanceConfig) validateName(formats strfmt.Registry) error {
 
 	if err := validate.RequiredString("name", "body", m.Name); err != nil {
@@ -309,75 +162,11 @@ func (m *InstanceConfig) validateName(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *InstanceConfig) validatePriority(formats strfmt.Registry) error {
-
-	if err := validate.Required("priority", "body", uint8(m.Priority)); err != nil {
-		return err
-	}
-
-	if err := validate.MinimumUint("priority", "body", uint64(m.Priority), 1, false); err != nil {
-		return err
-	}
-
-	if err := validate.MaximumUint("priority", "body", uint64(m.Priority), 100, false); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-var instanceConfigTypeStatePropEnum []interface{}
-
-func init() {
-	var res []string
-	if err := json.Unmarshal([]byte(`["MASTER","BACKUP"]`), &res); err != nil {
-		panic(err)
-	}
-	for _, v := range res {
-		instanceConfigTypeStatePropEnum = append(instanceConfigTypeStatePropEnum, v)
-	}
-}
-
-const (
-
-	// InstanceConfigStateMASTER captures enum value "MASTER"
-	InstanceConfigStateMASTER string = "MASTER"
-
-	// InstanceConfigStateBACKUP captures enum value "BACKUP"
-	InstanceConfigStateBACKUP string = "BACKUP"
-)
-
-// prop value enum
-func (m *InstanceConfig) validateStateEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, instanceConfigTypeStatePropEnum, true); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *InstanceConfig) validateState(formats strfmt.Registry) error {
-
-	if err := validate.RequiredString("state", "body", m.State); err != nil {
-		return err
-	}
-
-	// value enum
-	if err := m.validateStateEnum("state", "body", m.State); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // ContextValidate validate this instance config based on the context it is used
 func (m *InstanceConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateBackendCheckCommands(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateBackendServers(ctx, formats); err != nil {
+	if err := m.contextValidateEndpoints(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -387,32 +176,16 @@ func (m *InstanceConfig) ContextValidate(ctx context.Context, formats strfmt.Reg
 	return nil
 }
 
-func (m *InstanceConfig) contextValidateBackendCheckCommands(ctx context.Context, formats strfmt.Registry) error {
+func (m *InstanceConfig) contextValidateEndpoints(ctx context.Context, formats strfmt.Registry) error {
 
-	if m.BackendCheckCommands != nil {
-		if err := m.BackendCheckCommands.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("backend_check_commands")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("backend_check_commands")
-			}
-			return err
-		}
-	}
+	for i := 0; i < len(m.Endpoints); i++ {
 
-	return nil
-}
-
-func (m *InstanceConfig) contextValidateBackendServers(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.BackendServers); i++ {
-
-		if m.BackendServers[i] != nil {
-			if err := m.BackendServers[i].ContextValidate(ctx, formats); err != nil {
+		if m.Endpoints[i] != nil {
+			if err := m.Endpoints[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("backend_servers" + "." + strconv.Itoa(i))
+					return ve.ValidateName("endpoints" + "." + strconv.Itoa(i))
 				} else if ce, ok := err.(*errors.CompositeError); ok {
-					return ce.ValidateName("backend_servers" + "." + strconv.Itoa(i))
+					return ce.ValidateName("endpoints" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -434,100 +207,6 @@ func (m *InstanceConfig) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary interface implementation
 func (m *InstanceConfig) UnmarshalBinary(b []byte) error {
 	var res InstanceConfig
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// InstanceConfigBackendCheckCommands Backend check commands
-//
-// swagger:model InstanceConfigBackendCheckCommands
-type InstanceConfigBackendCheckCommands struct {
-
-	// check type
-	// Example: http-check
-	// Enum: [http-check tcp-check]
-	CheckType string `json:"check_type,omitempty"`
-
-	// Backend TCP check commands
-	// Example: ["expect status 200"]
-	Commands []string `json:"commands"`
-}
-
-// Validate validates this instance config backend check commands
-func (m *InstanceConfigBackendCheckCommands) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateCheckType(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-var instanceConfigBackendCheckCommandsTypeCheckTypePropEnum []interface{}
-
-func init() {
-	var res []string
-	if err := json.Unmarshal([]byte(`["http-check","tcp-check"]`), &res); err != nil {
-		panic(err)
-	}
-	for _, v := range res {
-		instanceConfigBackendCheckCommandsTypeCheckTypePropEnum = append(instanceConfigBackendCheckCommandsTypeCheckTypePropEnum, v)
-	}
-}
-
-const (
-
-	// InstanceConfigBackendCheckCommandsCheckTypeHTTPDashCheck captures enum value "http-check"
-	InstanceConfigBackendCheckCommandsCheckTypeHTTPDashCheck string = "http-check"
-
-	// InstanceConfigBackendCheckCommandsCheckTypeTCPDashCheck captures enum value "tcp-check"
-	InstanceConfigBackendCheckCommandsCheckTypeTCPDashCheck string = "tcp-check"
-)
-
-// prop value enum
-func (m *InstanceConfigBackendCheckCommands) validateCheckTypeEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, instanceConfigBackendCheckCommandsTypeCheckTypePropEnum, true); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *InstanceConfigBackendCheckCommands) validateCheckType(formats strfmt.Registry) error {
-	if swag.IsZero(m.CheckType) { // not required
-		return nil
-	}
-
-	// value enum
-	if err := m.validateCheckTypeEnum("backend_check_commands"+"."+"check_type", "body", m.CheckType); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// ContextValidate validates this instance config backend check commands based on context it is used
-func (m *InstanceConfigBackendCheckCommands) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *InstanceConfigBackendCheckCommands) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *InstanceConfigBackendCheckCommands) UnmarshalBinary(b []byte) error {
-	var res InstanceConfigBackendCheckCommands
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

@@ -1,13 +1,13 @@
 package wacher
 
 import (
+	"fmt"
+	"sync"
+	"time"
+
 	"gitee.com/flexlb/flexlb-api/common"
 	"gitee.com/flexlb/flexlb-api/config"
 	"gitee.com/flexlb/flexlb-api/models"
-	"fmt"
-	"log"
-	"sync"
-	"time"
 )
 
 const (
@@ -21,8 +21,8 @@ var (
 )
 
 func StartInstanceWatcher() {
-	log.Printf("starting instance watcher, ticker: %ds", config.Config.WatchInterval)
-	ticker = time.NewTicker(time.Second * time.Duration(config.Config.WatchInterval)) // start timmer
+	common.LogPrintf(common.LOG_INFO, "FlexLB", "starting instance watcher, ticker: %ds", config.LB.WatchInterval)
+	ticker = time.NewTicker(time.Second * time.Duration(config.LB.WatchInterval)) // start timmer
 	for {
 		<-ticker.C // wait ticker
 
@@ -30,21 +30,22 @@ func StartInstanceWatcher() {
 			break
 		}
 
-		if err := refreshKeepalived(); err != nil {
-			config.ReadyStatus = models.ReadyStatusStatusKeepalivedNotReady
+		if err := reconcileKeepalived(); err != nil {
+			common.LogPrintf(common.LOG_ERROR, "FlexLB", "reconcile keepalvied failed")
+			config.UpdateNodeStatus(config.LB.Name, config.ReadyStatusNotReady)
+			config.GossipNodeStatus()
 			continue
 		}
 
-		config.ReadyStatus = models.ReadyStatusStatusReady
+		config.UpdateNodeStatus(config.LB.Name, config.ReadyStatusReady)
+		config.GossipNodeStatus()
 
 		if insts := config.ListInstances(nil); len(insts) > 0 {
-			if common.Debug {
-				log.Printf("refreshing instances")
-			}
+			common.LogPrintf(common.LOG_DEBUG, "FlexLB", "reconcile all instances")
 
 			var jobCnt uint8 = 0
 			for _, inst := range insts {
-				go refreshInstance(inst) // refresh in the backend
+				go reconcileInstance(inst) // refresh in the backend
 				if jobCnt++; jobCnt >= jobBatch {
 					jobGrp.Wait() // watch batch finish
 					jobCnt = 0
@@ -58,51 +59,59 @@ func StartInstanceWatcher() {
 func StopInstanceWacher() {
 	wacherStopped = true
 	if ticker != nil {
-		if common.Debug {
-			log.Printf("stop instance watcher")
-		}
+		common.LogPrintf(common.LOG_DEBUG, "FlexLB", "stop instance watcher")
 		ticker.Stop()
 		ticker = nil
 	}
 }
 
-func refreshKeepalived() error {
-	status := common.GetProcStatus(config.Config.Keepalived.PidFile)
+func reconcileKeepalived() error {
+	status := common.GetProcStatus(config.LB.Keepalived.PidFile)
+	// start keepalived if not up
 	if status != common.STATUS_UP {
-		if err := common.StartKeepalived(config.Config.Keepalived.PidFile); err != nil {
+		if err := common.StartKeepalived(config.LB.Keepalived.PidFile); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func refreshInstance(inst *models.Instance) {
+func reconcileInstance(inst *models.Instance) {
 	jobGrp.Add(1)
-	cfgFile := fmt.Sprintf("%s/%s.cfg", config.Config.HAProxy.ConfigDir, inst.Config.Name)
-	pidFile := fmt.Sprintf("%s/%s.pid", config.Config.HAProxy.PidDir, inst.Config.Name)
+	cfgFile := fmt.Sprintf("%s/%s.cfg", config.LB.HAProxy.ConfigDir, inst.Config.Name)
+	pidFile := fmt.Sprintf("%s/%s.pid", config.LB.HAProxy.PidDir, inst.Config.Name)
 	procStatus := common.GetProcStatus(pidFile)
 	vipStatus := common.GetIPStatus(inst.Config.FrontendIpaddress, &inst.Config.FrontendNetPrefix, &inst.Config.FrontendInterface)
 
 	if vipStatus == common.STATUS_UP {
 		if procStatus != common.STATUS_UP {
-			// VIP启动，HAProxy未启动，则启动HAProxy
-			if newStatus, err := common.StartHAProxy(cfgFile, pidFile, config.Config.HAProxy.StartTimeout); err == nil {
-				config.UpdateInstanceStatus(inst.Config.Name, newStatus)
+			// vip up, haproxy not up, then start haproxy
+			if newStatus, err := common.StartHAProxy(cfgFile, pidFile, config.LB.HAProxy.StartTimeout); err == nil {
+				config.UpdateInstanceStatus(config.LB.Name, inst.Config.Name, newStatus)
+				// notify other nodes
+				config.GossipInstanceStatus(inst.Config.Name, newStatus)
 			}
-		} else if inst.Status != models.InstanceStatusUp {
-			// VIP启动，HAProxy已启动，但实例状态未启动，则重启HAProxy
-			if newStatus, err := common.RestartHAProxy(cfgFile, pidFile, config.Config.HAProxy.StartTimeout); err == nil {
-				config.UpdateInstanceStatus(inst.Config.Name, newStatus)
+		} else if inst.Status[config.LB.Name] != common.STATUS_UP {
+			// vip up, haproxy up, but inst down, then restart haproxy
+			if newStatus, err := common.RestartHAProxy(cfgFile, pidFile, config.LB.HAProxy.StartTimeout); err == nil {
+				config.UpdateInstanceStatus(config.LB.Name, inst.Config.Name, newStatus)
+				// notify other nodes
+				config.GossipInstanceStatus(inst.Config.Name, newStatus)
 			}
 		} else {
-			// VIP启动，HAProxy已启动，实例状态已启动，则一切正常
+			// vip up, haproxy up, inst up, then do nothing
+			// notify other nodes
+			config.GossipInstanceStatus(inst.Config.Name, common.STATUS_UP)
 		}
 	} else {
 		if procStatus == common.STATUS_UP {
-			// VIP未启动，HAProxy已启动，则停止HAProxy
+			// vip down, haproxy up, then stop haproxy
 			common.StopHAProxy(pidFile)
 		}
-		config.UpdateInstanceStatus(inst.Config.Name, models.InstanceStatusDown)
+		// inst is down, update status
+		config.UpdateInstanceStatus(config.LB.Name, inst.Config.Name, common.STATUS_DOWN)
+		// notify other nodes
+		config.GossipInstanceStatus(inst.Config.Name, common.STATUS_DOWN)
 	}
 	jobGrp.Done()
 }

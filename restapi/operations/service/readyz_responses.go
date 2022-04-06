@@ -25,7 +25,7 @@ type ReadyzOK struct {
 	/*
 	  In: Body
 	*/
-	Payload *models.ReadyStatus `json:"body,omitempty"`
+	Payload models.ReadyStatus `json:"body,omitempty"`
 }
 
 // NewReadyzOK creates ReadyzOK with default headers values
@@ -35,13 +35,13 @@ func NewReadyzOK() *ReadyzOK {
 }
 
 // WithPayload adds the payload to the readyz o k response
-func (o *ReadyzOK) WithPayload(payload *models.ReadyStatus) *ReadyzOK {
+func (o *ReadyzOK) WithPayload(payload models.ReadyStatus) *ReadyzOK {
 	o.Payload = payload
 	return o
 }
 
 // SetPayload sets the payload to the readyz o k response
-func (o *ReadyzOK) SetPayload(payload *models.ReadyStatus) {
+func (o *ReadyzOK) SetPayload(payload models.ReadyStatus) {
 	o.Payload = payload
 }
 
@@ -49,10 +49,13 @@ func (o *ReadyzOK) SetPayload(payload *models.ReadyStatus) {
 func (o *ReadyzOK) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
 	rw.WriteHeader(200)
-	if o.Payload != nil {
-		payload := o.Payload
-		if err := producer.Produce(rw, payload); err != nil {
-			panic(err) // let the recovery middleware deal with this
-		}
+	payload := o.Payload
+	if payload == nil {
+		// return empty map
+		payload = models.ReadyStatus{}
+	}
+
+	if err := producer.Produce(rw, payload); err != nil {
+		panic(err) // let the recovery middleware deal with this
 	}
 }

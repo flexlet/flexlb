@@ -13,7 +13,6 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/validate"
 
 	"gitee.com/flexlb/flexlb-api/models"
@@ -41,12 +40,6 @@ type ModifyParams struct {
 	  In: body
 	*/
 	Config *models.InstanceConfig
-	/*Instance name
-	  Required: true
-	  Pattern: ^[A-Za-z0-9\-_.]{1,32}$
-	  In: path
-	*/
-	Name string
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -85,41 +78,8 @@ func (o *ModifyParams) BindRequest(r *http.Request, route *middleware.MatchedRou
 	} else {
 		res = append(res, errors.Required("config", "body", ""))
 	}
-
-	rName, rhkName, _ := route.Params.GetOK("name")
-	if err := o.bindName(rName, rhkName, route.Formats); err != nil {
-		res = append(res, err)
-	}
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-// bindName binds and validates parameter Name from path.
-func (o *ModifyParams) bindName(rawData []string, hasKey bool, formats strfmt.Registry) error {
-	var raw string
-	if len(rawData) > 0 {
-		raw = rawData[len(rawData)-1]
-	}
-
-	// Required: true
-	// Parameter is provided by construction from the route
-	o.Name = raw
-
-	if err := o.validateName(formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// validateName carries on validations for parameter Name
-func (o *ModifyParams) validateName(formats strfmt.Registry) error {
-
-	if err := validate.Pattern("name", "path", o.Name, `^[A-Za-z0-9\-_.]{1,32}$`); err != nil {
-		return err
-	}
-
 	return nil
 }

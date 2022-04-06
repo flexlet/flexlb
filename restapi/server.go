@@ -56,7 +56,7 @@ func NewServer(api *operations.FlexlbAPI) *Server {
 // ConfigureAPI configures the API and handlers.
 func (s *Server) ConfigureAPI() {
 	if s.api != nil {
-		s.handler = configureAPI(s.api)
+		s.handler = configureAPI(s)
 	}
 }
 
@@ -134,7 +134,7 @@ func (s *Server) SetAPI(api *operations.FlexlbAPI) {
 	}
 
 	s.api = api
-	s.handler = configureAPI(api)
+	s.handler = configureAPI(s)
 }
 
 func (s *Server) hasScheme(scheme string) bool {

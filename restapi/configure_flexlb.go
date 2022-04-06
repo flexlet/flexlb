@@ -11,6 +11,7 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/swag"
+	flags "github.com/jessevdk/go-flags"
 
 	"gitee.com/flexlb/flexlb-api/common"
 	"gitee.com/flexlb/flexlb-api/config"
@@ -21,8 +22,7 @@ import (
 
 // flexlb command line options
 var options = struct {
-	ConfigFile string `short:"c" long:"config-file" description:"Configuration file" default:"/etc/flexlb/flexlb-api-config.yaml" group:"flexlb"`
-	Debug      bool   `short:"d" long:"debug" description:"Debug mode, show verbose logs" group:"flexlb"`
+	ConfigFile string `short:"c" long:"config-file" env:"FLEXLB_CONFIG_FILE" description:"Configuration file" default:"/etc/flexlb/flexlb-api-config.yaml" group:"flexlb"`
 	Version    bool   `short:"v" long:"version" description:"Show version" group:"flexlb"`
 }{}
 
@@ -38,7 +38,7 @@ func configureFlags(api *operations.FlexlbAPI) {
 	}
 }
 
-func configureAPI(api *operations.FlexlbAPI) http.Handler {
+func configureAPI(s *Server) http.Handler {
 
 	// show version and exit
 	if options.Version {
@@ -46,39 +46,54 @@ func configureAPI(api *operations.FlexlbAPI) http.Handler {
 		os.Exit(0)
 	}
 
-	// set debug mode
-	common.Debug = options.Debug
-
 	// load config file
 	config.LoadConfig(options.ConfigFile)
 
+	// set log level
+	common.LogLevel = int(config.LB.LogLevel)
+
+	// set server params
+	s.Host = config.LB.Host
+	s.Port = int(config.LB.Port)
+	s.TLSHost = config.LB.TLSHost
+	s.TLSPort = int(config.LB.TLSPort)
+	s.TLSCertificate = flags.Filename(config.LB.TLSCert)
+	s.TLSCertificateKey = flags.Filename(config.LB.TLSKey)
+	s.TLSCACertificate = flags.Filename(config.LB.TLSCACert)
+
 	// load saved instances
 	config.LoadInstances()
+
+	// update cluster isntance
+	config.UpdateClusterInstance()
+
+	// start cluster gossip
+	config.StartClusterGossip()
 
 	// start wachers
 	go wacher.StartInstanceWatcher()
 
 	// setup service handlers
-	api.ServiceReadyzHandler = &handlers.ReadyzHandlerImpl{}
+	s.api.ServiceReadyzHandler = &handlers.ReadyzHandlerImpl{}
 
 	// setup instance handlers
-	api.InstanceCreateHandler = &handlers.InstanceCreateHandlerImpl{}
-	api.InstanceListHandler = &handlers.InstanceListHandlerImpl{}
-	api.InstanceGetHandler = &handlers.InstanceGetHandlerImpl{}
-	api.InstanceModifyHandler = &handlers.InstanceModifyHandlerImpl{}
-	api.InstanceDeleteHandler = &handlers.InstanceDeleteHandlerImpl{}
-	api.InstanceStopHandler = &handlers.InstanceStopHandlerImpl{}
-	api.InstanceStartHandler = &handlers.InstanceStartHandlerImpl{}
+	s.api.InstanceCreateHandler = &handlers.InstanceCreateHandlerImpl{}
+	s.api.InstanceListHandler = &handlers.InstanceListHandlerImpl{}
+	s.api.InstanceGetHandler = &handlers.InstanceGetHandlerImpl{}
+	s.api.InstanceModifyHandler = &handlers.InstanceModifyHandlerImpl{}
+	s.api.InstanceDeleteHandler = &handlers.InstanceDeleteHandlerImpl{}
+	s.api.InstanceStopHandler = &handlers.InstanceStopHandlerImpl{}
+	s.api.InstanceStartHandler = &handlers.InstanceStartHandlerImpl{}
 
-	api.PreServerShutdown = func() {
+	s.api.PreServerShutdown = func() {
 		wacher.StopInstanceWacher()
 	}
 
-	api.ServerShutdown = func() {}
+	s.api.ServerShutdown = func() {}
 
 	// Swagger generated code:
 
-	api.ServeError = errors.ServeError
+	s.api.ServeError = errors.ServeError
 
 	// Set your custom logger if needed. Default one is log.Printf
 	// Expected interface func(string, ...interface{})
@@ -90,11 +105,11 @@ func configureAPI(api *operations.FlexlbAPI) http.Handler {
 	// To continue using redoc as your UI, uncomment the following line
 	// api.UseRedoc()
 
-	api.JSONConsumer = runtime.JSONConsumer()
+	s.api.JSONConsumer = runtime.JSONConsumer()
 
-	api.JSONProducer = runtime.JSONProducer()
+	s.api.JSONProducer = runtime.JSONProducer()
 
-	return setupGlobalMiddleware(api.Serve(setupMiddlewares))
+	return setupGlobalMiddleware(s.api.Serve(setupMiddlewares))
 }
 
 // The TLS configuration before HTTPS server starts.

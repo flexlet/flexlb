@@ -87,6 +87,53 @@ func init() {
           }
         }
       },
+      "put": {
+        "description": "Modify Instance",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Instance"
+        ],
+        "operationId": "modify",
+        "parameters": [
+          {
+            "description": "Instance request",
+            "name": "config",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/InstanceConfig"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Modify Instance succeeded",
+            "schema": {
+              "$ref": "#/definitions/Instance"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/trait:standardErrors:400"
+          },
+          "401": {
+            "$ref": "#/responses/trait:standardErrors:401"
+          },
+          "403": {
+            "$ref": "#/responses/trait:standardErrors:403"
+          },
+          "404": {
+            "$ref": "#/responses/trait:standardErrors:404"
+          },
+          "500": {
+            "$ref": "#/responses/trait:standardErrors:500"
+          }
+        }
+      },
       "post": {
         "description": "Create Instance",
         "consumes": [
@@ -159,62 +206,6 @@ func init() {
         "responses": {
           "200": {
             "description": "Get Instance succeeded",
-            "schema": {
-              "$ref": "#/definitions/Instance"
-            }
-          },
-          "400": {
-            "$ref": "#/responses/trait:standardErrors:400"
-          },
-          "401": {
-            "$ref": "#/responses/trait:standardErrors:401"
-          },
-          "403": {
-            "$ref": "#/responses/trait:standardErrors:403"
-          },
-          "404": {
-            "$ref": "#/responses/trait:standardErrors:404"
-          },
-          "500": {
-            "$ref": "#/responses/trait:standardErrors:500"
-          }
-        }
-      },
-      "put": {
-        "description": "Modify Instance",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "Instance"
-        ],
-        "operationId": "modify",
-        "parameters": [
-          {
-            "pattern": "^[A-Za-z0-9\\-_.]{1,32}$",
-            "type": "string",
-            "x-nullable": false,
-            "description": "Instance name",
-            "name": "name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "description": "Instance request",
-            "name": "config",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/InstanceConfig"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Modify Instance succeeded",
             "schema": {
               "$ref": "#/definitions/Instance"
             }
@@ -409,6 +400,32 @@ func init() {
         "port"
       ],
       "properties": {
+        "check_ssl_options": {
+          "description": "Backend check commands",
+          "type": "object",
+          "properties": {
+            "ca_cert": {
+              "type": "string",
+              "x-nullable": true
+            },
+            "client_cert": {
+              "type": "string",
+              "x-nullable": false
+            },
+            "client_key": {
+              "type": "string",
+              "x-nullable": false
+            },
+            "verify": {
+              "type": "string",
+              "enum": [
+                "none"
+              ],
+              "x-nullable": true
+            }
+          },
+          "x-nullable": true
+        },
         "ipaddress": {
           "description": "Backend server IP address",
           "type": "string",
@@ -434,55 +451,12 @@ func init() {
           "x-nullable": false
         }
       },
-      "additionalProperties": false,
-      "example": {
-        "ipaddress": "192.168.1.2",
-        "name": "node1",
-        "options": "check check-ssl verify none",
-        "port": 443
-      }
+      "additionalProperties": false
     },
-    "Instance": {
-      "description": "Instance",
+    "Endpoint": {
+      "description": "Endpoint",
       "required": [
-        "id",
-        "config",
-        "status"
-      ],
-      "properties": {
-        "config": {
-          "x-nullable": false,
-          "$ref": "#/definitions/InstanceConfig"
-        },
-        "id": {
-          "description": "Instance ID",
-          "type": "integer",
-          "format": "uint8",
-          "maximum": 255,
-          "x-nullable": false
-        },
-        "status": {
-          "description": "Instance status",
-          "type": "string",
-          "enum": [
-            "up",
-            "down",
-            "pending"
-          ],
-          "x-nullable": false
-        }
-      }
-    },
-    "InstanceConfig": {
-      "description": "Instance config",
-      "required": [
-        "name",
-        "frontend_interface",
-        "state",
-        "priority",
-        "frontend_ipaddress",
         "frontend_port",
-        "frontend_net_prefix",
         "mode",
         "balance",
         "backend_servers"
@@ -546,6 +520,114 @@ func init() {
           "default": "roundrobin",
           "x-nullable": false
         },
+        "frontend_options": {
+          "description": "Frontend options",
+          "type": "string",
+          "default": "",
+          "x-nullable": true,
+          "example": "ssl"
+        },
+        "frontend_port": {
+          "description": "Frontend port",
+          "type": "integer",
+          "format": "uint16",
+          "x-nullable": false,
+          "example": 443
+        },
+        "frontend_ssl_options": {
+          "description": "Backend check commands",
+          "type": "object",
+          "properties": {
+            "ca_cert": {
+              "type": "string",
+              "x-nullable": true
+            },
+            "server_cert": {
+              "type": "string",
+              "x-nullable": false
+            },
+            "server_key": {
+              "type": "string",
+              "x-nullable": false
+            },
+            "verify": {
+              "type": "string",
+              "enum": [
+                "required",
+                "optional"
+              ],
+              "x-nullable": true
+            }
+          },
+          "x-nullable": true
+        },
+        "mode": {
+          "description": "Protocol mode",
+          "type": "string",
+          "default": "tcp",
+          "enum": [
+            "tcp",
+            "udp",
+            "http"
+          ],
+          "x-nullable": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "Instance": {
+      "description": "Instance",
+      "required": [
+        "id",
+        "config",
+        "status"
+      ],
+      "properties": {
+        "config": {
+          "x-nullable": false,
+          "$ref": "#/definitions/InstanceConfig"
+        },
+        "id": {
+          "description": "Instance ID",
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "x-nullable": false
+        },
+        "last_modified": {
+          "description": "Last modified time",
+          "type": "integer",
+          "format": "int64",
+          "x-nullable": false
+        },
+        "status": {
+          "description": "Instance status",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-nullable": false
+        }
+      }
+    },
+    "InstanceConfig": {
+      "description": "Instance config",
+      "required": [
+        "name",
+        "frontend_interface",
+        "frontend_ipaddress",
+        "frontend_net_prefix",
+        "endpoints"
+      ],
+      "properties": {
+        "endpoints": {
+          "description": "Endpoints",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Endpoint"
+          },
+          "x-nullable": false
+        },
         "frontend_interface": {
           "description": "Frontend network interface",
           "type": "string",
@@ -570,73 +652,19 @@ func init() {
           "x-nullable": false,
           "example": 24
         },
-        "frontend_options": {
-          "description": "Frontend options",
-          "type": "string",
-          "default": "",
-          "x-nullable": true,
-          "example": "ssl"
-        },
-        "frontend_port": {
-          "description": "Frontend port",
-          "type": "integer",
-          "format": "uint16",
-          "x-nullable": false,
-          "example": 443
-        },
-        "mode": {
-          "description": "Protocol mode",
-          "type": "string",
-          "default": "tcp",
-          "enum": [
-            "tcp",
-            "udp",
-            "http"
-          ],
-          "x-nullable": false
-        },
         "name": {
           "description": "Instance name",
           "type": "string",
           "pattern": "^[A-Za-z0-9\\-_.]{1,32}$",
-          "x-nullable": false
-        },
-        "priority": {
-          "description": "Instance priority",
-          "type": "integer",
-          "format": "uint8",
-          "default": 100,
-          "maximum": 100,
-          "minimum": 1,
-          "x-nullable": false
-        },
-        "state": {
-          "description": "Instance state",
-          "type": "string",
-          "default": "MASTER",
-          "enum": [
-            "MASTER",
-            "BACKUP"
-          ],
           "x-nullable": false
         }
       }
     },
     "ReadyStatus": {
       "description": "Ready status",
-      "required": [
-        "status"
-      ],
-      "properties": {
-        "status": {
-          "description": "Ready status",
-          "type": "string",
-          "enum": [
-            "ready",
-            "keepalived_not_ready"
-          ],
-          "x-nullable": false
-        }
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
       }
     }
   },
@@ -838,6 +866,96 @@ func init() {
           }
         }
       },
+      "put": {
+        "description": "Modify Instance",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Instance"
+        ],
+        "operationId": "modify",
+        "parameters": [
+          {
+            "description": "Instance request",
+            "name": "config",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/InstanceConfig"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Modify Instance succeeded",
+            "schema": {
+              "$ref": "#/definitions/Instance"
+            }
+          },
+          "400": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "required": [
+                "message"
+              ],
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "403": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "required": [
+                "message"
+              ],
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "required": [
+                "status",
+                "error"
+              ],
+              "properties": {
+                "error": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      },
       "post": {
         "description": "Create Instance",
         "consumes": [
@@ -953,105 +1071,6 @@ func init() {
         "responses": {
           "200": {
             "description": "Get Instance succeeded",
-            "schema": {
-              "$ref": "#/definitions/Instance"
-            }
-          },
-          "400": {
-            "description": "",
-            "schema": {
-              "type": "object",
-              "required": [
-                "message"
-              ],
-              "properties": {
-                "message": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "schema": {
-              "type": "object"
-            }
-          },
-          "403": {
-            "description": "",
-            "schema": {
-              "type": "object",
-              "required": [
-                "message"
-              ],
-              "properties": {
-                "message": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "schema": {
-              "type": "object",
-              "required": [
-                "status",
-                "error"
-              ],
-              "properties": {
-                "error": {
-                  "type": "string"
-                },
-                "status": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "",
-            "schema": {
-              "type": "object"
-            }
-          }
-        }
-      },
-      "put": {
-        "description": "Modify Instance",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "Instance"
-        ],
-        "operationId": "modify",
-        "parameters": [
-          {
-            "pattern": "^[A-Za-z0-9\\-_.]{1,32}$",
-            "type": "string",
-            "x-nullable": false,
-            "description": "Instance name",
-            "name": "name",
-            "in": "path",
-            "required": true
-          },
-          {
-            "description": "Instance request",
-            "name": "config",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/InstanceConfig"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Modify Instance succeeded",
             "schema": {
               "$ref": "#/definitions/Instance"
             }
@@ -1418,6 +1437,32 @@ func init() {
         "port"
       ],
       "properties": {
+        "check_ssl_options": {
+          "description": "Backend check commands",
+          "type": "object",
+          "properties": {
+            "ca_cert": {
+              "type": "string",
+              "x-nullable": true
+            },
+            "client_cert": {
+              "type": "string",
+              "x-nullable": false
+            },
+            "client_key": {
+              "type": "string",
+              "x-nullable": false
+            },
+            "verify": {
+              "type": "string",
+              "enum": [
+                "none"
+              ],
+              "x-nullable": true
+            }
+          },
+          "x-nullable": true
+        },
         "ipaddress": {
           "description": "Backend server IP address",
           "type": "string",
@@ -1443,56 +1488,38 @@ func init() {
           "x-nullable": false
         }
       },
-      "additionalProperties": false,
-      "example": {
-        "ipaddress": "192.168.1.2",
-        "name": "node1",
-        "options": "check check-ssl verify none",
-        "port": 443
-      }
+      "additionalProperties": false
     },
-    "Instance": {
-      "description": "Instance",
-      "required": [
-        "id",
-        "config",
-        "status"
-      ],
+    "BackendServerCheckSslOptions": {
+      "description": "Backend check commands",
+      "type": "object",
       "properties": {
-        "config": {
-          "x-nullable": false,
-          "$ref": "#/definitions/InstanceConfig"
+        "ca_cert": {
+          "type": "string",
+          "x-nullable": true
         },
-        "id": {
-          "description": "Instance ID",
-          "type": "integer",
-          "format": "uint8",
-          "maximum": 255,
-          "minimum": 0,
+        "client_cert": {
+          "type": "string",
           "x-nullable": false
         },
-        "status": {
-          "description": "Instance status",
+        "client_key": {
+          "type": "string",
+          "x-nullable": false
+        },
+        "verify": {
           "type": "string",
           "enum": [
-            "up",
-            "down",
-            "pending"
+            "none"
           ],
-          "x-nullable": false
+          "x-nullable": true
         }
-      }
+      },
+      "x-nullable": true
     },
-    "InstanceConfig": {
-      "description": "Instance config",
+    "Endpoint": {
+      "description": "Endpoint",
       "required": [
-        "name",
-        "frontend_interface",
-        "state",
-        "priority",
-        "frontend_ipaddress",
         "frontend_port",
-        "frontend_net_prefix",
         "mode",
         "balance",
         "backend_servers"
@@ -1556,30 +1583,6 @@ func init() {
           "default": "roundrobin",
           "x-nullable": false
         },
-        "frontend_interface": {
-          "description": "Frontend network interface",
-          "type": "string",
-          "pattern": "^[A-Za-z0-9\\-_.]{1,32}$",
-          "x-nullable": false,
-          "example": "eth0"
-        },
-        "frontend_ipaddress": {
-          "description": "Frontend IP address",
-          "type": "string",
-          "pattern": "((^\\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\\s*$)|(^\\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:)))(%.+)?\\s*$))",
-          "x-nullable": false,
-          "example": "192.168.1.2"
-        },
-        "frontend_net_prefix": {
-          "description": "Frontend network prefix",
-          "type": "integer",
-          "format": "uint8",
-          "default": 32,
-          "maximum": 32,
-          "minimum": 8,
-          "x-nullable": false,
-          "example": 24
-        },
         "frontend_options": {
           "description": "Frontend options",
           "type": "string",
@@ -1594,6 +1597,33 @@ func init() {
           "x-nullable": false,
           "example": 443
         },
+        "frontend_ssl_options": {
+          "description": "Backend check commands",
+          "type": "object",
+          "properties": {
+            "ca_cert": {
+              "type": "string",
+              "x-nullable": true
+            },
+            "server_cert": {
+              "type": "string",
+              "x-nullable": false
+            },
+            "server_key": {
+              "type": "string",
+              "x-nullable": false
+            },
+            "verify": {
+              "type": "string",
+              "enum": [
+                "required",
+                "optional"
+              ],
+              "x-nullable": true
+            }
+          },
+          "x-nullable": true
+        },
         "mode": {
           "description": "Protocol mode",
           "type": "string",
@@ -1604,35 +1634,11 @@ func init() {
             "http"
           ],
           "x-nullable": false
-        },
-        "name": {
-          "description": "Instance name",
-          "type": "string",
-          "pattern": "^[A-Za-z0-9\\-_.]{1,32}$",
-          "x-nullable": false
-        },
-        "priority": {
-          "description": "Instance priority",
-          "type": "integer",
-          "format": "uint8",
-          "default": 100,
-          "maximum": 100,
-          "minimum": 1,
-          "x-nullable": false
-        },
-        "state": {
-          "description": "Instance state",
-          "type": "string",
-          "default": "MASTER",
-          "enum": [
-            "MASTER",
-            "BACKUP"
-          ],
-          "x-nullable": false
         }
-      }
+      },
+      "additionalProperties": false
     },
-    "InstanceConfigBackendCheckCommands": {
+    "EndpointBackendCheckCommands": {
       "description": "Backend check commands",
       "type": "object",
       "properties": {
@@ -1659,21 +1665,125 @@ func init() {
       },
       "x-nullable": true
     },
-    "ReadyStatus": {
-      "description": "Ready status",
+    "EndpointFrontendSslOptions": {
+      "description": "Backend check commands",
+      "type": "object",
+      "properties": {
+        "ca_cert": {
+          "type": "string",
+          "x-nullable": true
+        },
+        "server_cert": {
+          "type": "string",
+          "x-nullable": false
+        },
+        "server_key": {
+          "type": "string",
+          "x-nullable": false
+        },
+        "verify": {
+          "type": "string",
+          "enum": [
+            "required",
+            "optional"
+          ],
+          "x-nullable": true
+        }
+      },
+      "x-nullable": true
+    },
+    "Instance": {
+      "description": "Instance",
       "required": [
+        "id",
+        "config",
         "status"
       ],
       "properties": {
+        "config": {
+          "x-nullable": false,
+          "$ref": "#/definitions/InstanceConfig"
+        },
+        "id": {
+          "description": "Instance ID",
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "x-nullable": false
+        },
+        "last_modified": {
+          "description": "Last modified time",
+          "type": "integer",
+          "format": "int64",
+          "minimum": 0,
+          "x-nullable": false
+        },
         "status": {
-          "description": "Ready status",
-          "type": "string",
-          "enum": [
-            "ready",
-            "keepalived_not_ready"
-          ],
+          "description": "Instance status",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
           "x-nullable": false
         }
+      }
+    },
+    "InstanceConfig": {
+      "description": "Instance config",
+      "required": [
+        "name",
+        "frontend_interface",
+        "frontend_ipaddress",
+        "frontend_net_prefix",
+        "endpoints"
+      ],
+      "properties": {
+        "endpoints": {
+          "description": "Endpoints",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Endpoint"
+          },
+          "x-nullable": false
+        },
+        "frontend_interface": {
+          "description": "Frontend network interface",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9\\-_.]{1,32}$",
+          "x-nullable": false,
+          "example": "eth0"
+        },
+        "frontend_ipaddress": {
+          "description": "Frontend IP address",
+          "type": "string",
+          "pattern": "((^\\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\\s*$)|(^\\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)(\\.(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)){3}))|:)))(%.+)?\\s*$))",
+          "x-nullable": false,
+          "example": "192.168.1.2"
+        },
+        "frontend_net_prefix": {
+          "description": "Frontend network prefix",
+          "type": "integer",
+          "format": "uint8",
+          "default": 32,
+          "maximum": 32,
+          "minimum": 8,
+          "x-nullable": false,
+          "example": 24
+        },
+        "name": {
+          "description": "Instance name",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9\\-_.]{1,32}$",
+          "x-nullable": false
+        }
+      }
+    },
+    "ReadyStatus": {
+      "description": "Ready status",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
       }
     }
   },

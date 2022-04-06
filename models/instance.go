@@ -7,7 +7,6 @@ package models
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -30,10 +29,13 @@ type Instance struct {
 	// Minimum: 0
 	ID uint8 `json:"id"`
 
+	// Last modified time
+	// Minimum: 0
+	LastModified int64 `json:"last_modified,omitempty"`
+
 	// Instance status
 	// Required: true
-	// Enum: [up down pending]
-	Status string `json:"status"`
+	Status map[string]string `json:"status"`
 }
 
 // Validate validates this instance
@@ -45,6 +47,10 @@ func (m *Instance) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLastModified(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -95,46 +101,21 @@ func (m *Instance) validateID(formats strfmt.Registry) error {
 	return nil
 }
 
-var instanceTypeStatusPropEnum []interface{}
-
-func init() {
-	var res []string
-	if err := json.Unmarshal([]byte(`["up","down","pending"]`), &res); err != nil {
-		panic(err)
+func (m *Instance) validateLastModified(formats strfmt.Registry) error {
+	if swag.IsZero(m.LastModified) { // not required
+		return nil
 	}
-	for _, v := range res {
-		instanceTypeStatusPropEnum = append(instanceTypeStatusPropEnum, v)
-	}
-}
 
-const (
-
-	// InstanceStatusUp captures enum value "up"
-	InstanceStatusUp string = "up"
-
-	// InstanceStatusDown captures enum value "down"
-	InstanceStatusDown string = "down"
-
-	// InstanceStatusPending captures enum value "pending"
-	InstanceStatusPending string = "pending"
-)
-
-// prop value enum
-func (m *Instance) validateStatusEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, instanceTypeStatusPropEnum, true); err != nil {
+	if err := validate.MinimumInt("last_modified", "body", m.LastModified, 0, false); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (m *Instance) validateStatus(formats strfmt.Registry) error {
 
-	if err := validate.RequiredString("status", "body", m.Status); err != nil {
-		return err
-	}
-
-	// value enum
-	if err := m.validateStatusEnum("status", "body", m.Status); err != nil {
+	if err := validate.Required("status", "body", m.Status); err != nil {
 		return err
 	}
 

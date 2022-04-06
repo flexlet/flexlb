@@ -330,7 +330,7 @@ func (o *FlexlbAPI) initHandlerCache() {
 	if o.handlers["PUT"] == nil {
 		o.handlers["PUT"] = make(map[string]http.Handler)
 	}
-	o.handlers["PUT"]["/instances/{name}"] = instance.NewModify(o.context, o.InstanceModifyHandler)
+	o.handlers["PUT"]["/instances"] = instance.NewModify(o.context, o.InstanceModifyHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}

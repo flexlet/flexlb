@@ -7,101 +7,21 @@ package models
 
 import (
 	"context"
-	"encoding/json"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // ReadyStatus Ready status
 //
 // swagger:model ReadyStatus
-type ReadyStatus struct {
-
-	// Ready status
-	// Required: true
-	// Enum: [ready keepalived_not_ready]
-	Status string `json:"status"`
-}
+type ReadyStatus map[string]string
 
 // Validate validates this ready status
-func (m *ReadyStatus) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateStatus(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-var readyStatusTypeStatusPropEnum []interface{}
-
-func init() {
-	var res []string
-	if err := json.Unmarshal([]byte(`["ready","keepalived_not_ready"]`), &res); err != nil {
-		panic(err)
-	}
-	for _, v := range res {
-		readyStatusTypeStatusPropEnum = append(readyStatusTypeStatusPropEnum, v)
-	}
-}
-
-const (
-
-	// ReadyStatusStatusReady captures enum value "ready"
-	ReadyStatusStatusReady string = "ready"
-
-	// ReadyStatusStatusKeepalivedNotReady captures enum value "keepalived_not_ready"
-	ReadyStatusStatusKeepalivedNotReady string = "keepalived_not_ready"
-)
-
-// prop value enum
-func (m *ReadyStatus) validateStatusEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, readyStatusTypeStatusPropEnum, true); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *ReadyStatus) validateStatus(formats strfmt.Registry) error {
-
-	if err := validate.RequiredString("status", "body", m.Status); err != nil {
-		return err
-	}
-
-	// value enum
-	if err := m.validateStatusEnum("status", "body", m.Status); err != nil {
-		return err
-	}
-
+func (m ReadyStatus) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
 // ContextValidate validates this ready status based on context it is used
-func (m *ReadyStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *ReadyStatus) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *ReadyStatus) UnmarshalBinary(b []byte) error {
-	var res ReadyStatus
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
+func (m ReadyStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }

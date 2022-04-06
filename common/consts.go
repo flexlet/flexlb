@@ -1,6 +1,9 @@
 package common
 
-import "io/fs"
+import (
+	"io/fs"
+	"log"
+)
 
 const (
 	MODE_PERM_RW fs.FileMode = 0600
@@ -18,6 +21,15 @@ const (
 	VERSION string = "0.1.0"
 )
 
+const (
+	LOG_DEBUG int = iota
+	LOG_INFO
+	LOG_WARN
+	LOG_ERROR
+)
+
 var (
-	Debug bool = false
+	Logger   *log.Logger = log.Default()
+	LogLevel int         = LOG_DEBUG
+	LogLabel []string    = []string{"DEBUG", "INFO", "WARN", "ERROR"}
 )

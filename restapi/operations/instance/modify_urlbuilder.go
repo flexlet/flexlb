@@ -9,16 +9,11 @@ import (
 	"errors"
 	"net/url"
 	golangswaggerpaths "path"
-	"strings"
 )
 
 // ModifyURL generates an URL for the modify operation
 type ModifyURL struct {
-	Name string
-
 	_basePath string
-	// avoid unkeyed usage
-	_ struct{}
 }
 
 // WithBasePath sets the base path for this url builder, only required when it's different from the
@@ -40,14 +35,7 @@ func (o *ModifyURL) SetBasePath(bp string) {
 func (o *ModifyURL) Build() (*url.URL, error) {
 	var _result url.URL
 
-	var _path = "/instances/{name}"
-
-	name := o.Name
-	if name != "" {
-		_path = strings.Replace(_path, "{name}", name, -1)
-	} else {
-		return nil, errors.New("name is required on ModifyURL")
-	}
+	var _path = "/instances"
 
 	_basePath := o._basePath
 	if _basePath == "" {

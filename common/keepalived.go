@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"log"
 )
 
 const (
@@ -11,7 +10,7 @@ const (
 )
 
 func StartKeepalived(pidFile string) error {
-	log.Println("starting keepalived")
+	LogPrintf(LOG_INFO, "keepalived", "starting keepalived")
 	if _, err := ExecCommand(keepalivedStartCmd); err != nil {
 		return err
 	}
@@ -25,7 +24,7 @@ func ReloadKeepalived(pidFile string) error {
 			return err
 		}
 	}
-	log.Println("reloading keepalived")
+	LogPrintf(LOG_INFO, "keepalived", "reloading keepalived")
 	cmd := fmt.Sprintf("PIDFILE=%s;%s", pidFile, keepalivedReloadCmd)
 	if _, err := ExecCommand(cmd); err != nil {
 		return err
