@@ -12,6 +12,7 @@ import (
 	"gitee.com/flexlb/flexlb-api/common"
 	"gitee.com/flexlb/flexlb-api/models"
 	"github.com/google/go-cmp/cmp"
+	"github.com/00ahui/utils"
 )
 
 var (
@@ -32,13 +33,13 @@ func LoadInstances() {
 		path := fmt.Sprintf("%s/%s", LB.InstanceDir, f.Name())
 		data, err := ioutil.ReadFile(path)
 		if err != nil {
-			common.LogPrintf(common.LOG_ERROR, "FlexLB", "load instance file '%s' failed: %s", path, err.Error())
+			utils.LogPrintf(utils.LOG_ERROR, "FlexLB", "load instance file '%s' failed: %s", path, err.Error())
 			continue
 		}
 		var inst models.Instance
 		err = json.Unmarshal(data, &inst)
 		if err != nil {
-			common.LogPrintf(common.LOG_ERROR, "FlexLB", "load instance file '%s' failed: %s", path, err.Error())
+			utils.LogPrintf(utils.LOG_ERROR, "FlexLB", "load instance file '%s' failed: %s", path, err.Error())
 			continue
 		}
 		instances[inst.Config.Name] = &inst
@@ -172,7 +173,7 @@ func StopInstance(name string) (*models.Instance, error) {
 	}
 
 	// update instance status
-	inst.Status[LB.Name] = common.STATUS_DOWN
+	inst.Status[LB.Name] = utils.STATUS_DOWN
 
 	// save instance to file
 	if err := createInstanceFile(inst); err != nil {
@@ -180,7 +181,7 @@ func StopInstance(name string) (*models.Instance, error) {
 	}
 
 	// notify other nodes
-	GossipInstanceStatus(inst.Config.Name, common.STATUS_DOWN)
+	GossipInstanceStatus(inst.Config.Name, utils.STATUS_DOWN)
 
 	return inst, nil
 }
@@ -211,7 +212,7 @@ func StartInstance(name string) (*models.Instance, error) {
 	}
 
 	// update instance status
-	inst.Status[LB.Name] = common.STATUS_PENDING
+	inst.Status[LB.Name] = utils.STATUS_PENDING
 
 	// save instance to file
 	if err := createInstanceFile(inst); err != nil {
@@ -219,7 +220,7 @@ func StartInstance(name string) (*models.Instance, error) {
 	}
 
 	// notify other nodes
-	GossipInstanceStatus(inst.Config.Name, common.STATUS_PENDING)
+	GossipInstanceStatus(inst.Config.Name, utils.STATUS_PENDING)
 
 	return inst, nil
 }
@@ -252,7 +253,7 @@ func ModifyInstance(cfg *models.InstanceConfig) (*models.Instance, error) {
 	}
 
 	// update instance status
-	inst.Status[LB.Name] = common.STATUS_PENDING
+	inst.Status[LB.Name] = utils.STATUS_PENDING
 
 	// save instance to file
 	if err := createInstanceFile(inst); err != nil {
@@ -282,7 +283,7 @@ func CreateInstance(cfg *models.InstanceConfig) (*models.Instance, error) {
 		Status:       make(map[string]string),
 		LastModified: time.Now().UnixMilli(),
 	}
-	inst.Status[LB.Name] = common.STATUS_PENDING
+	inst.Status[LB.Name] = utils.STATUS_PENDING
 
 	if err := saveInstance(inst); err != nil {
 		return nil, err
@@ -388,13 +389,13 @@ func createInstanceFile(inst *models.Instance) error {
 		return err
 	} else {
 		f := fmt.Sprintf("%s/%s.json", LB.InstanceDir, inst.Config.Name)
-		return ioutil.WriteFile(f, data, common.MODE_PERM_RW)
+		return ioutil.WriteFile(f, data, utils.MODE_PERM_RW)
 	}
 }
 
 func deleteInstanceFile(instName string) error {
 	f := fmt.Sprintf("%s/%s.json", LB.InstanceDir, instName)
-	if !common.FileExist(f) {
+	if !utils.FileExist(f) {
 		return nil
 	}
 	return os.Remove(f)
@@ -404,7 +405,7 @@ func createKeepalivedConfigFile(cfg *models.InstanceConfig, id uint8) error {
 	var b strings.Builder
 	b.WriteString(fmt.Sprintf("vrrp_instance %s {\n", cfg.Name))
 	b.WriteString(fmt.Sprintf("    state %s\n    nopreempt\n", "BACKUP"))
-	b.WriteString(fmt.Sprintf("    priority %d\n", common.RandNum(100)))
+	b.WriteString(fmt.Sprintf("    priority %d\n", utils.RandNum(100)))
 	b.WriteString(fmt.Sprintf("    interface %s\n", cfg.FrontendInterface))
 	b.WriteString(fmt.Sprintf("    virtual_router_id %d\n", id))
 	b.WriteString(fmt.Sprintf("    advert_int %d\n", LB.Keepalived.AdvertInt))
@@ -417,12 +418,12 @@ func createKeepalivedConfigFile(cfg *models.InstanceConfig, id uint8) error {
 	b.WriteString("    }\n")
 	b.WriteString("}\n\n")
 	f := fmt.Sprintf("%s/%s.cfg", LB.Keepalived.ConfigDir, cfg.Name)
-	return os.WriteFile(f, []byte(b.String()), common.MODE_PERM_RW)
+	return os.WriteFile(f, []byte(b.String()), utils.MODE_PERM_RW)
 }
 
 func deleteKeepalivedConfigFile(instName string) error {
 	f := fmt.Sprintf("%s/%s.cfg", LB.Keepalived.ConfigDir, instName)
-	if !common.FileExist(f) {
+	if !utils.FileExist(f) {
 		return nil
 	}
 	return os.Remove(f)
@@ -468,11 +469,11 @@ func createHAProxyConfigFile(cfg *models.InstanceConfig) error {
 		// ssl crt <inst>.pem ca-file <inst>-ca.pem verify required
 		if ept.FrontendSslOptions != nil {
 			frontendCrt := fmt.Sprintf("%s/%s.pem", LB.HAProxy.ConfigDir, eptName)
-			common.CreateFile(frontendCrt, ept.FrontendSslOptions.ServerCert, ept.FrontendSslOptions.ServerKey)
+			utils.CreateFile(frontendCrt, ept.FrontendSslOptions.ServerCert, ept.FrontendSslOptions.ServerKey)
 			bind = bind + " ssl crt " + frontendCrt
 			if ept.FrontendSslOptions.CaCert != nil {
 				frontendCaFile := fmt.Sprintf("%s/%s-ca.pem", LB.HAProxy.ConfigDir, eptName)
-				common.CreateFile(frontendCaFile, *ept.FrontendSslOptions.CaCert)
+				utils.CreateFile(frontendCaFile, *ept.FrontendSslOptions.CaCert)
 				bind = bind + " ca-file " + frontendCaFile
 			}
 			if ept.FrontendSslOptions.Verify != nil {
@@ -507,11 +508,11 @@ func createHAProxyConfigFile(cfg *models.InstanceConfig) error {
 			// check-ssl crt <inst>-<backend>.pem ca-file <inst>-<backend>-ca.pem verify none
 			if backend.CheckSslOptions != nil {
 				backendCrt := fmt.Sprintf("%s/%s-%s.pem", LB.HAProxy.ConfigDir, eptName, backend.Name)
-				common.CreateFile(backendCrt, backend.CheckSslOptions.ClientCert, backend.CheckSslOptions.ClientKey)
+				utils.CreateFile(backendCrt, backend.CheckSslOptions.ClientCert, backend.CheckSslOptions.ClientKey)
 				server = server + " check-ssl crt " + backendCrt
 				if backend.CheckSslOptions.CaCert != nil {
 					backendCaFile := fmt.Sprintf("%s/%s-%s-ca.pem", LB.HAProxy.ConfigDir, eptName, backend.Name)
-					common.CreateFile(backendCaFile, *backend.CheckSslOptions.CaCert)
+					utils.CreateFile(backendCaFile, *backend.CheckSslOptions.CaCert)
 					server = server + " ca-file " + backendCaFile
 				}
 				if backend.CheckSslOptions.Verify != nil {
@@ -523,7 +524,7 @@ func createHAProxyConfigFile(cfg *models.InstanceConfig) error {
 	}
 
 	f := fmt.Sprintf("%s/%s.cfg", LB.HAProxy.ConfigDir, cfg.Name)
-	return os.WriteFile(f, []byte(b.String()), common.MODE_PERM_RW)
+	return os.WriteFile(f, []byte(b.String()), utils.MODE_PERM_RW)
 }
 
 func deleteHAProxyConfigFile(cfg *models.InstanceConfig) error {
@@ -533,10 +534,10 @@ func deleteHAProxyConfigFile(cfg *models.InstanceConfig) error {
 		// clean frontend pem files
 		if ept.FrontendSslOptions != nil {
 			frontendCrt := fmt.Sprintf("%s/%s.pem", LB.HAProxy.ConfigDir, eptName)
-			common.DelFileIfExist(frontendCrt)
+			utils.DelFileIfExist(frontendCrt)
 			if ept.FrontendSslOptions.CaCert != nil {
 				frontendCaFile := fmt.Sprintf("%s/%s-ca.pem", LB.HAProxy.ConfigDir, eptName)
-				common.DelFileIfExist(frontendCaFile)
+				utils.DelFileIfExist(frontendCaFile)
 			}
 		}
 
@@ -544,15 +545,15 @@ func deleteHAProxyConfigFile(cfg *models.InstanceConfig) error {
 		for _, backend := range ept.BackendServers {
 			if backend.CheckSslOptions != nil {
 				backendCrt := fmt.Sprintf("%s/%s-%s.pem", LB.HAProxy.ConfigDir, eptName, backend.Name)
-				common.DelFileIfExist(backendCrt)
+				utils.DelFileIfExist(backendCrt)
 				if backend.CheckSslOptions.CaCert != nil {
 					backendCaFile := fmt.Sprintf("%s/%s-%s-ca.pem", LB.HAProxy.ConfigDir, eptName, backend.Name)
-					common.DelFileIfExist(backendCaFile)
+					utils.DelFileIfExist(backendCaFile)
 				}
 			}
 		}
 	}
 	// clean haproxy cfg
 	f := fmt.Sprintf("%s/%s.cfg", LB.HAProxy.ConfigDir, cfg.Name)
-	return common.DelFileIfExist(f)
+	return utils.DelFileIfExist(f)
 }

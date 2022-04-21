@@ -18,6 +18,8 @@ import (
 	"gitee.com/flexlb/flexlb-api/handlers"
 	"gitee.com/flexlb/flexlb-api/restapi/operations"
 	"gitee.com/flexlb/flexlb-api/wacher"
+
+	"github.com/00ahui/utils"
 )
 
 // flexlb command line options
@@ -50,7 +52,7 @@ func configureAPI(s *Server) http.Handler {
 	config.LoadConfig(options.ConfigFile)
 
 	// set log level
-	common.LogLevel = int(config.LB.LogLevel)
+	utils.LogLevel = int(config.LB.LogLevel)
 
 	// set server params
 	s.Host = config.LB.Host

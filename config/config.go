@@ -13,6 +13,8 @@ import (
 	"gitee.com/flexlb/flexlb-api/models"
 
 	"gopkg.in/yaml.v2"
+
+	"github.com/00ahui/utils"
 )
 
 type HAProxyGlobalConfig struct {
@@ -129,10 +131,10 @@ func LoadConfig(conf string) {
 	}
 
 	// initialize directories
-	common.MkdirIfNotExist(LB.InstanceDir)
-	common.MkdirIfNotExist(LB.Keepalived.ConfigDir)
-	common.MkdirIfNotExist(LB.HAProxy.ConfigDir)
-	common.MkdirIfNotExist(LB.HAProxy.PidDir)
+	utils.MkdirIfNotExist(LB.InstanceDir)
+	utils.MkdirIfNotExist(LB.Keepalived.ConfigDir)
+	utils.MkdirIfNotExist(LB.HAProxy.ConfigDir)
+	utils.MkdirIfNotExist(LB.HAProxy.PidDir)
 
 	// initialize node status map
 	LB.Status = make(models.ReadyStatus)
@@ -174,7 +176,7 @@ func UpdateNodeEndpoint(node string, nodeIp string, nodePort uint16) {
 	clusterMutex.Lock()
 	defer clusterMutex.Unlock()
 
-	common.LogPrintf(common.LOG_DEBUG, "FlexLB", "updating cluster node endpoint '%s'", node)
+	utils.LogPrintf(utils.LOG_DEBUG, "FlexLB", "updating cluster node endpoint '%s'", node)
 
 	LB.Cluster.Nodes[node] = NodeEndpoint{IPAddress: nodeIp, Port: nodePort}
 	UpdateClusterInstance()
@@ -189,7 +191,7 @@ func RemoveNodeEndpoint(node string) {
 	clusterMutex.Lock()
 	defer clusterMutex.Unlock()
 
-	common.LogPrintf(common.LOG_DEBUG, "FlexLB", "removing cluster node endpoint '%s'", node)
+	utils.LogPrintf(utils.LOG_DEBUG, "FlexLB", "removing cluster node endpoint '%s'", node)
 
 	delete(LB.Cluster.Nodes, node)
 	UpdateClusterInstance()
@@ -207,7 +209,7 @@ func initKeepalivedConfigFile() {
 	b.WriteString("}\n\n")
 	b.WriteString(fmt.Sprintf("include %s/*.cfg\n", LB.Keepalived.ConfigDir))
 
-	err := os.WriteFile(LB.Keepalived.ConfigFile, []byte(b.String()), common.MODE_PERM_RW)
+	err := os.WriteFile(LB.Keepalived.ConfigFile, []byte(b.String()), utils.MODE_PERM_RW)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -230,7 +232,7 @@ func initClusterInstCfg() {
 		frontendIpaddress = fields[0]
 		frontendPort = uint16(port)
 	}
-	if intf, prfx, err := common.GetInterfaceOfIP(LB.TLSHost); err != nil {
+	if intf, prfx, err := utils.GetInterfaceOfIP(LB.TLSHost); err != nil {
 		log.Fatal(err)
 	} else {
 		frontendInterface = *intf

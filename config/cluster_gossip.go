@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	"gitee.com/flexlb/flexlb-api/common"
 	"gitee.com/flexlb/flexlb-api/models"
 	"github.com/hashicorp/memberlist"
+	"github.com/00ahui/utils"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 	MsgTypeNodeEndpoint   byte = 'e'
 )
 
-var gossip *common.Gossip
+var gossip *utils.Gossip
 
 func StartClusterGossip() error {
 
@@ -37,7 +37,7 @@ func StartClusterGossip() error {
 		return fmt.Errorf("gossip endpoint format error: %s, should be <host>:<port>", LB.Cluster.Advertize)
 	}
 
-	gossip = common.GossipWith(LB.Name, bindAddr, bindPort)
+	gossip = utils.GossipWith(LB.Name, bindAddr, bindPort)
 	gossip.SecretKey = []byte(LB.Cluster.SecretKey)
 	gossip.ProbeInterval = int(LB.Cluster.ProbeInterval)
 	gossip.SyncInterval = int(LB.Cluster.SyncInterval)
@@ -143,7 +143,7 @@ func notifyMsgHandler(msg []byte) {
 		}
 	// ready status
 	case MsgTypeNodeStatus:
-		common.LogPrintf(common.LOG_DEBUG, "FlexLB", "received node status msg: '%s'", string(msgData))
+		utils.LogPrintf(utils.LOG_DEBUG, "FlexLB", "received node status msg: '%s'", string(msgData))
 		// node:status
 		v := strings.Split(string(msgData), ":")
 		if len(v) == 2 {
@@ -151,7 +151,7 @@ func notifyMsgHandler(msg []byte) {
 		}
 	// node endpoint
 	case MsgTypeNodeEndpoint:
-		common.LogPrintf(common.LOG_DEBUG, "FlexLB", "received node endpoint msg: '%s'", string(msgData))
+		utils.LogPrintf(utils.LOG_DEBUG, "FlexLB", "received node endpoint msg: '%s'", string(msgData))
 		// node:ip:port
 		v := strings.Split(string(msgData), ":")
 		if len(v) == 3 {
@@ -190,7 +190,7 @@ func mergeRemoteStateHandler(data []byte) {
 
 // node leave
 func notifyLeaveHandler(node *memberlist.Node) {
-	common.LogPrintf(common.LOG_INFO, "FlexLB", "node '%s' left cluster", node.Name)
+	utils.LogPrintf(utils.LOG_INFO, "FlexLB", "node '%s' left cluster", node.Name)
 	RemoveNodeStatus(node.Name)
 	RemoveNodeEndpoint(node.Name)
 	RemoveInstancesStatus(node.Name)
@@ -198,11 +198,11 @@ func notifyLeaveHandler(node *memberlist.Node) {
 
 // node join
 func notifyJoinHandler(node *memberlist.Node) {
-	common.LogPrintf(common.LOG_INFO, "FlexLB", "node '%s' joined cluster", node.Name)
+	utils.LogPrintf(utils.LOG_INFO, "FlexLB", "node '%s' joined cluster", node.Name)
 	if node.Name != LB.Name {
 		UpdateNodeStatus(node.Name, ReadyStatusStarting)
 		if gossip.Ready {
-			common.LogPrintf(common.LOG_DEBUG, "FlexLB", "node '%s' joined cluster, gossip local node", node.Name)
+			utils.LogPrintf(utils.LOG_DEBUG, "FlexLB", "node '%s' joined cluster, gossip local node", node.Name)
 			// gossip local node to new joined node
 			GossipNodeStatus()
 			GossipNodeEndpoint()
