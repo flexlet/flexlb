@@ -1,0 +1,26 @@
+[Unit]
+Description=flexlb systemd
+After=network.target
+
+[Service]
+KillMode=process
+Delegate=yes
+LimitNOFILE=65536
+LimitNPROC=infinity
+LimitCORE=infinity
+TasksMax=infinity
+TimeoutStartSec=0
+Restart=always
+RestartSec=5s
+EnvironmentFile=/etc/flexlb/service.conf
+ExecStart=/usr/local/bin/flexlb
+ExecReload=/bin/kill -USR2 $MAINPID
+ExecStop=/bin/rm -f $PIDFILE
+KillMode=process
+Type=simple
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=flexlb
+
+[Install]
+WantedBy=multi-user.target

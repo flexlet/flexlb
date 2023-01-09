@@ -1,9 +1,9 @@
-module gitee.com/flexlb/flexlb-api
+module github.com/flexlet/flexlb
 
 go 1.17
 
 require (
-	github.com/00ahui/utils v0.1.0
+	github.com/flexlet/utils v0.0.0-20230109071517-36e0765ca74b
 	github.com/go-openapi/errors v0.20.2
 	github.com/go-openapi/loads v0.21.1
 	github.com/go-openapi/runtime v0.23.2
@@ -12,7 +12,7 @@ require (
 	github.com/go-openapi/swag v0.21.1
 	github.com/go-openapi/validate v0.21.0
 	github.com/google/go-cmp v0.5.2
-	github.com/hashicorp/memberlist v0.3.1
+	github.com/hashicorp/memberlist v0.5.0
 	github.com/jessevdk/go-flags v1.5.0
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
 	gopkg.in/yaml.v2 v2.4.0
@@ -44,6 +44,6 @@ require (
 	github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 // indirect
 	go.mongodb.org/mongo-driver v1.8.3 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
+	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )

@@ -1,0 +1,17 @@
+# software version
+VERSION=0.4.2
+
+# cpu arch
+ARCH="amd64"
+
+# root cert cn
+CERT_ISSUER="/CN=example.com"
+
+# server cert cn
+SERVER_DNS_NAME="flexlb.example.com"
+
+# client cert cn
+CLIENT_DNS_NAME="client.example.com"
+
+# cert expire days
+CERT_EXPIRE=3650

@@ -7,15 +7,22 @@ Flexible load balancer API server to control keepalived and haproxy
 ### Clone code
 
 ```sh
-git clone https://gitee.com/flexlb/flexlb-api.git
+git clone https://github.com/flexlet/flexlb.git
 ```
 
 ### Build binary
 
 #### For Linux
 ```sh
-cd flexlb-api
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /tmp/flexlb-api cmd/flexlb-server/main.go
+cd flexlb
+
+# edit build/profile to config options
+
+# generate certs
+sh build/gencrt.sh
+
+# build tarball
+sh build/build.sh
 ```
 
 ## Run
@@ -37,45 +44,17 @@ systemctl start keepalived
 rpm -ivh haproxy-2.0.14-1.eulerosv2r9.x86_64.rpm
 ```
 
-### Generage self-signed certificate
-
-#### Generate CA key and CA certs
-
-```sh
-mkdir -p  /etc/flexlb/certs/
-cd /etc/flexlb/certs/
-
-DNS_NAME="example.com"
-
-openssl genrsa -out ca.key 2048
-openssl req -new -out ca.csr -key ca.key -subj "/CN=${DNS_NAME}"
-openssl x509 -req -in ca.csr -out ca.crt -signkey ca.key -CAcreateserial -days 3650
-```
-#### Generate server key and certs
-
-```sh
-openssl genrsa -out server.key 2048
-openssl req -new -out server.csr -key server.key -subj "/CN=${DNS_NAME}"
-openssl x509 -req -in server.csr -out server.crt -signkey server.key -CA ca.crt -CAkey ca.key -CAcreateserial -days 3650
-```
-
-#### Generate client key and certs
-
-```sh
-openssl genrsa -out client.key 2048
-openssl req -new -out client.csr -key client.key -subj "/CN=${DNS_NAME}"
-openssl x509 -req -in client.csr -out client.crt -signkey client.key -CA ca.crt -CAkey ca.key -CAcreateserial -days 3650
-```
-
 ### Run FlexLB API server
 ```sh
-# copy conf/flexlb-api-config.yaml to nodes /etc/flexlb/
-# edit /etc/flexlb/flexlb-api-config.yaml, change <NODE_NAME> <NODE_PUB_IP> <CLUSTER_PUB_IP> <NODE_ADVERTISE_IP> and other member's <NODE_ADVERTISE_IP>
+# copy and extract tarbal
+mkdir flexlb-<version> && cd flexlb-<version>
+tar -zxf ../flexlb-<version>.tar.gz
 
-# copy /tmp/flexlb-api to nodes, and run on each nodes
-chmod +x flexlb-api
-./flexlb-api
+# check install options
+sh install.sh -h
 
+# install
+sh install.sh [options]
 ```
 
 ## Test
@@ -93,7 +72,7 @@ For example, create 3 nginx server:
 
 Prepare instance config for API post, for example: 
 ```
-test/instance_template.json
+hack/instance_template.json
 ```
 
 ### Test instance create, list, modify, get, start, stop, delete

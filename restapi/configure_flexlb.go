@@ -1,13 +1,3 @@
-// Copyright (c) 2022 Yaohui Wang (yaohuiwang@outlook.com)
-// FlexLB is licensed under Mulan PubL v2.
-// You can use this software according to the terms and conditions of the Mulan PubL v2.
-// You may obtain a copy of Mulan PubL v2 at:
-//         http://license.coscl.org.cn/MulanPubL-2.0
-// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
-// See the Mulan PubL v2 for more details.
-
 // This file is safe to edit. Once it exists it will not be overwritten
 
 package restapi
@@ -23,18 +13,18 @@ import (
 	"github.com/go-openapi/swag"
 	flags "github.com/jessevdk/go-flags"
 
-	"gitee.com/flexlb/flexlb-api/common"
-	"gitee.com/flexlb/flexlb-api/config"
-	"gitee.com/flexlb/flexlb-api/handlers"
-	"gitee.com/flexlb/flexlb-api/restapi/operations"
-	"gitee.com/flexlb/flexlb-api/wacher"
+	"github.com/flexlet/flexlb/pkg/common"
+	"github.com/flexlet/flexlb/pkg/config"
+	"github.com/flexlet/flexlb/pkg/handlers"
+	"github.com/flexlet/flexlb/pkg/wacher"
+	"github.com/flexlet/flexlb/restapi/operations"
 
-	"github.com/00ahui/utils"
+	"github.com/flexlet/utils"
 )
 
 // flexlb command line options
 var options = struct {
-	ConfigFile string `short:"c" long:"config-file" env:"FLEXLB_CONFIG_FILE" description:"Configuration file" default:"/etc/flexlb/flexlb-api-config.yaml" group:"flexlb"`
+	ConfigFile string `short:"c" long:"config-file" env:"FLEXLB_CONFIG_FILE" description:"Configuration file" default:"/etc/flexlb/config.yaml" group:"flexlb"`
 	Version    bool   `short:"v" long:"version" description:"Show version" group:"flexlb"`
 }{}
 
@@ -80,7 +70,10 @@ func configureAPI(s *Server) http.Handler {
 	config.UpdateClusterInstance()
 
 	// start cluster gossip
-	config.StartClusterGossip()
+	if err := config.StartClusterGossip(); err != nil {
+		fmt.Printf("Start cluster gossip failed: %s\n", err.Error())
+		os.Exit(1)
+	}
 
 	// start wachers
 	go wacher.StartInstanceWatcher()
